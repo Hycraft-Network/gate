@@ -9,6 +9,7 @@ import (
 	"github.com/robinbraemer/event"
 
 	"go.minekube.com/gate/pkg/edition/java/proxy"
+	liteconfig "go.minekube.com/gate/pkg/edition/java/lite/config"
 	"go.minekube.com/gate/pkg/gate/config"
 	"go.minekube.com/gate/pkg/internal/api"
 	"go.minekube.com/gate/pkg/internal/hashutil"
