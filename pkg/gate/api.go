@@ -49,7 +49,13 @@ func setupAPI(cfg *config.Config, eventMgr event.Manager, initialEnable *proxy.P
 
 			if c.Config.API.Enabled {
 				svc := api.NewService(initialEnable)
-				srv := api.NewServer(c.Config.API.Config, svc)
+				// Pass lite config pointer so the Lite REST endpoints can
+				// read and mutate routes at runtime without restarting.
+				var liteConf *liteconfig.Config
+				if c.Config.Config.Lite.Enabled {
+					liteConf = &c.Config.Config.Lite
+				}
+				srv := api.NewServer(c.Config.API.Config, svc, liteConf)
 
 				var runCtx context.Context
 				runCtx, stop = context.WithCancel(ctx)
