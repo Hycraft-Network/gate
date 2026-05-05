@@ -14,19 +14,22 @@ import (
 	"golang.org/x/net/http2/h2c"
 	"golang.org/x/sync/errgroup"
 
+	"go.minekube.com/gate/pkg/edition/java/lite/config"
 	"go.minekube.com/gate/pkg/internal/api/gen/minekube/gate/v1/gatev1connect"
 )
 
-func NewServer(cfg Config, h Handler) *Server {
+func NewServer(cfg Config, h Handler, liteConfig *config.Config) *Server {
 	return &Server{
-		cfg: cfg,
-		h:   h,
+		cfg:        cfg,
+		h:          h,
+		liteConfig: liteConfig,
 	}
 }
 
 type Server struct {
-	cfg Config
-	h   Handler
+	cfg        Config
+	h          Handler
+	liteConfig *config.Config
 }
 
 func (s *Server) Start(ctx context.Context) error {
@@ -39,7 +42,17 @@ func (s *Server) Start(ctx context.Context) error {
 	}
 
 	mux := http.NewServeMux()
+
+	// Mount ConnectRPC handler (existing)
 	mux.Handle(gatev1connect.NewGateServiceHandler(s.h, connect.WithInterceptors(otelInterceptor)))
+
+	// Mount Lite REST handler (new) – only if lite mode config is available
+	if s.liteConfig != nil {
+		lr := NewLiteRouter(s.liteConfig)
+		path, handler := lr.Handler()
+		mux.Handle(path, handler)
+		log.Info("lite API endpoints enabled", "prefix", path)
+	}
 
 	hs := &http.Server{
 		Addr: s.cfg.Bind,
